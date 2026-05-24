@@ -38,7 +38,7 @@ const sections = [
     heading: '5. Your rights',
     body: [
       'You can request deletion of your account and data.',
-      'Contact support@originode.com to make a request.'
+      'Contact support@indease.com to make a request.'
     ]
   },
   {
@@ -50,7 +50,7 @@ const sections = [
   {
     heading: '7. Contact',
     body: [
-      'For privacy questions, contact support@originode.com.'
+      'For privacy questions, contact support@indease.com.'
     ]
   }
 ];

@@ -7,7 +7,8 @@ import {
 } from '@mui/material';
 import {
     ArrowBack, CheckCircle, RadioButtonUnchecked, Person, Engineering,
-    HardwareOutlined, CalendarToday, AccountBalanceWallet, LockOpen
+    HardwareOutlined, CalendarToday, AccountBalanceWallet, LockOpen,
+    GavelOutlined, PersonOff
 } from '@mui/icons-material';
 import api from '../services/api';
 
@@ -34,6 +35,8 @@ export default function JobDetail() {
     const [confirm, setConfirm] = useState({ open: false, milestone: null });
     const [releasing, setReleasing] = useState(false);
     const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+    const [disputeConfirm, setDisputeConfirm] = useState({ open: false, releaseTo: null });
+    const [resolvingDispute, setResolvingDispute] = useState(false);
 
     const fetchJob = async () => {
         setLoading(true);
@@ -61,6 +64,23 @@ export default function JobDetail() {
             setToast({ open: true, message: err.response?.data?.error || 'Release failed', severity: 'error' });
         } finally {
             setReleasing(false);
+        }
+    };
+
+    const handleResolveDispute = async () => {
+        setResolvingDispute(true);
+        try {
+            await api.patch(`/admin/jobs/${id}/resolve-dispute`, { releaseTo: disputeConfirm.releaseTo });
+            const msg = disputeConfirm.releaseTo === 'expert'
+                ? `Dispute resolved — payment released to ${job.expert_name || 'expert'}`
+                : `Dispute resolved — refund initiated for ${job.consumer_name || 'consumer'}`;
+            setToast({ open: true, message: msg, severity: 'success' });
+            setDisputeConfirm({ open: false, releaseTo: null });
+            fetchJob();
+        } catch (err) {
+            setToast({ open: true, message: err.response?.data?.error || 'Resolution failed', severity: 'error' });
+        } finally {
+            setResolvingDispute(false);
         }
     };
 
@@ -170,6 +190,63 @@ export default function JobDetail() {
                     </Paper>
                 </Grid>
 
+                {/* Dispute Resolution Panel */}
+                {job.disputed && (
+                    <Grid item xs={12}>
+                        <Paper elevation={0} sx={{ ...cardSx, height: 'auto', border: `1px solid ${theme.palette.error.light}`, bgcolor: 'error.50' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <GavelOutlined sx={{ color: 'error.main' }} />
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', color: 'error.main', letterSpacing: 1 }}>
+                                    Active Dispute
+                                </Typography>
+                                <Chip label="DISPUTED" color="error" size="small" sx={{ fontWeight: 800, fontSize: '0.6rem', borderRadius: 1, ml: 'auto' }} />
+                            </Box>
+
+                            <Grid container spacing={2} sx={{ mb: 2 }}>
+                                <Grid item xs={12} sm={4}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>Raised By</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>{job.dispute_raised_by || '—'}</Typography>
+                                </Grid>
+                                <Grid item xs={12} sm={4}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>Raised At</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{fmtTime(job.dispute_raised_at) || '—'}</Typography>
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>Dispute Reason</Typography>
+                                    <Typography variant="body2" sx={{ mt: 0.5, p: 1.5, bgcolor: 'background.paper', borderRadius: 2, border: `1px solid ${theme.palette.error.light}` }}>
+                                        {job.dispute_reason || 'No reason provided'}
+                                    </Typography>
+                                </Grid>
+                            </Grid>
+
+                            <Divider sx={{ my: 2 }} />
+
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Review the dispute and choose a resolution. This action is <strong>irreversible</strong>.
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                <Button
+                                    variant="contained" color="success"
+                                    startIcon={<LockOpen />}
+                                    onClick={() => setDisputeConfirm({ open: true, releaseTo: 'expert' })}
+                                    sx={{ borderRadius: 2.5 }}
+                                >
+                                    Release to Expert
+                                </Button>
+                                <Button
+                                    variant="contained" color="error"
+                                    startIcon={<PersonOff />}
+                                    onClick={() => setDisputeConfirm({ open: true, releaseTo: 'consumer' })}
+                                    sx={{ borderRadius: 2.5 }}
+                                >
+                                    Refund Consumer
+                                </Button>
+                            </Box>
+                        </Paper>
+                    </Grid>
+                )}
+
                 {/* Timeline */}
                 <Grid item xs={12}>
                     <Paper elevation={0} sx={{ ...cardSx, height: 'auto' }}>
@@ -220,6 +297,34 @@ export default function JobDetail() {
                         sx={{ borderRadius: 2.5 }}
                     >
                         {releasing ? 'Releasing…' : 'Confirm Release'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Dispute Resolution Confirm Dialog */}
+            <Dialog open={disputeConfirm.open} onClose={() => !resolvingDispute && setDisputeConfirm({ open: false, releaseTo: null })} PaperProps={{ sx: { borderRadius: 4 } }}>
+                <DialogTitle sx={{ fontWeight: 800 }}>
+                    {disputeConfirm.releaseTo === 'expert' ? '✅ Release Payment to Expert?' : '🔄 Refund Consumer?'}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary">
+                        {disputeConfirm.releaseTo === 'expert'
+                            ? `This will release all pending milestone payments to ${job?.expert_name || 'the expert'} and close the job. This cannot be undone.`
+                            : `This will mark the job as refunded. No payment will be released to ${job?.expert_name || 'the expert'}. This cannot be undone.`
+                        }
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+                    <Button onClick={() => setDisputeConfirm({ open: false, releaseTo: null })} disabled={resolvingDispute}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color={disputeConfirm.releaseTo === 'expert' ? 'success' : 'error'}
+                        onClick={handleResolveDispute}
+                        disabled={resolvingDispute}
+                        startIcon={resolvingDispute ? <CircularProgress size={16} color="inherit" /> : (disputeConfirm.releaseTo === 'expert' ? <LockOpen /> : <PersonOff />)}
+                        sx={{ borderRadius: 2.5 }}
+                    >
+                        {resolvingDispute ? 'Processing…' : (disputeConfirm.releaseTo === 'expert' ? 'Confirm Release' : 'Confirm Refund')}
                     </Button>
                 </DialogActions>
             </Dialog>

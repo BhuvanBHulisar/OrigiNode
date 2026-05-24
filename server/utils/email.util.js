@@ -23,7 +23,7 @@ export const sendVerificationEmail = async (email, token) => {
     const url = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
 
     const info = await transporter.sendMail({
-        from: '"origiNode Industrial" <' + process.env.SMTP_USER + '>',
+        from: '"IndEase Industrial" <' + process.env.SMTP_USER + '>',
         to: email,
         subject: "Industrial Identity: Verify Your Email",
         html: `<p>Please verify your email by clicking <a href="${url}">here</a>.</p>`,
@@ -44,7 +44,7 @@ export const sendPasswordResetEmail = async (email, token) => {
     const htmlTemplate = `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 8px;">
             <div style="background-color: #0f172a; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">origiNode Industrial</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">IndEase Industrial</h1>
             </div>
             <div style="padding: 30px;">
                 <h2 style="color: #0f172a; font-size: 20px;">Password Reset Request</h2>
@@ -61,13 +61,13 @@ export const sendPasswordResetEmail = async (email, token) => {
             </div>
             <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-radius: 0 0 8px 8px;">
                 <p style="margin: 0;">If you didn't request this change, you can safely ignore this email. Your industrial credentials remain secure.</p>
-                <p style="margin: 5px 0 0;">&copy; 2026 OrigiNode Platform. All rights reserved.</p>
+                <p style="margin: 5px 0 0;">&copy; 2026 IndEase Platform. All rights reserved.</p>
             </div>
         </div>
     `;
 
     const info = await transporter.sendMail({
-        from: '"origiNode Industrial" <' + process.env.SMTP_USER + '>',
+        from: '"IndEase Industrial" <' + process.env.SMTP_USER + '>',
         to: email,
         subject: "Industrial Integrity: Password Reset",
         html: htmlTemplate,

@@ -78,7 +78,7 @@ const sections = [
   {
     heading: '11. Contact',
     body: [
-      'For questions about these terms, contact support@originode.com.'
+      'For questions about these terms, contact support@indease.com.'
     ]
   }
 ];

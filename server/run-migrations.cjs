@@ -58,7 +58,24 @@ async function run() {
     `ALTER TABLE producer_profiles ADD COLUMN IF NOT EXISTS bank_account_name VARCHAR(255)`,
     `ALTER TABLE producer_profiles ALTER COLUMN bank_account_number TYPE VARCHAR(20) USING bank_account_number::TEXT`,
     `ALTER TABLE producer_profiles ALTER COLUMN account_number TYPE VARCHAR(20) USING account_number::TEXT`,
-    `ALTER TABLE producer_profiles ALTER COLUMN ifsc_code TYPE VARCHAR(11) USING ifsc_code::TEXT`
+    `ALTER TABLE producer_profiles ALTER COLUMN ifsc_code TYPE VARCHAR(11) USING ifsc_code::TEXT`,
+
+    // ── Escrow Confirmation Columns (add_escrow_confirmation) ──────────────
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS milestone1_released BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS milestone1_released_at TIMESTAMP`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS milestone1_release_type VARCHAR(20) DEFAULT NULL`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS milestone2_released BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS milestone2_released_at TIMESTAMP`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS milestone2_release_type VARCHAR(20) DEFAULT NULL`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS arrival_confirmed_by_consumer BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS arrival_confirmed_at TIMESTAMP`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS completion_confirmed_by_consumer BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS completion_confirmed_at TIMESTAMP`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS disputed BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS dispute_reason TEXT DEFAULT NULL`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS dispute_raised_at TIMESTAMP`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS dispute_raised_by VARCHAR(10) DEFAULT NULL`,
+    `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS work_done_at TIMESTAMP`
   ];
 
   for (const q of queries) {

@@ -89,17 +89,8 @@ import VideoUploadInput from "./components/VideoUploadInput";
 import VideoPlayer from "./components/VideoPlayer";
 
 import { generateInvoicePDF } from "./utils/invoiceGenerator";
-import { loadDemoStore, saveDemoStore, clearDemoStore, patchDemoStore } from "./utils/demoStore";
-import {
-  DEMO_PRODUCER_STATS,
-  DEMO_RADAR_JOBS,
-  DEMO_CHATS,
-  DEMO_MACHINES,
-  DEMO_ACTIVE_REQUESTS,
-  DEMO_TRANSACTION_HISTORY,
-  DEMO_EARNINGS_STATS,
-  DEMO_USERS,
-} from "./data/demoData";
+import CompleteProfileModal from "./components/modals/CompleteProfileModal";
+import PostPaymentRatingModal from "./components/modals/PostPaymentRatingModal";
 import { SERVICE_COMPLETION_MESSAGE } from "./utils/serviceRequestStatus";
 
 import api from "./services/api";
@@ -119,251 +110,23 @@ import "./App.css";
 import "./producer-styles.css";
 import "./signup.css";
 
-const AI_DIAGNOSIS_MAP = [
-  { keywords: ['leak', 'fluid', 'oil', 'drip', 'wet'],         type: 'Hydraulic Press',      issue: 'Seal leakage detected',           confidence: 87 },
-  { keywords: ['vibrat', 'shake', 'wobble', 'rattle'],         type: 'Rotary Machine',       issue: 'Bearing wear / imbalance',        confidence: 82 },
-  { keywords: ['heat', 'hot', 'overheat', 'temperature'],      type: 'Cooling System',       issue: 'Thermal overload risk',           confidence: 91 },
-  { keywords: ['noise', 'sound', 'loud', 'squeak', 'grind'],   type: 'Gearbox Assembly',     issue: 'Gear tooth wear detected',        confidence: 78 },
-  { keywords: ['slow', 'speed', 'rpm', 'performance', 'weak'], type: 'Drive Motor',          issue: 'Motor efficiency degradation',    confidence: 84 },
-  { keywords: ['smoke', 'burn', 'spark', 'electric', 'power'], type: 'Electrical System',    issue: 'Electrical fault / short risk',   confidence: 93 },
-  { keywords: ['jam', 'stuck', 'block', 'stop', 'freeze'],     type: 'Conveyor System',      issue: 'Mechanical obstruction detected', confidence: 88 },
-];
+import { AI_DIAGNOSIS_MAP, getAIDiagnosis } from "./data/diagnosisData";
+import INDIAN_LOCATIONS from "./data/locations";
+import { MOCK_MACHINES, MOCK_MESSAGES, simulatedAccounts } from "./data/mockData";
+import { faqs, tutorialVideos } from "./data/faqData";
+import ReportField from "./components/ui/ReportField";
+import PopupModal from "./components/modals/PopupModal";
+import ExpertProfileModal from "./components/modals/ExpertProfileModal";
+import CheckoutModal from "./components/modals/CheckoutModal";
+import AddMachineModal from "./components/modals/AddMachineModal";
+import DeleteAccountModal from "./components/modals/DeleteAccountModal";
+import DecommissionModal from "./components/modals/DecommissionModal";
+import { parseMessageBody } from "./utils/messageUtils";
 
-function getAIDiagnosis(description) {
-  const lower = (description || '').toLowerCase();
-  const match = AI_DIAGNOSIS_MAP.find(entry =>
-    entry.keywords.some(kw => lower.includes(kw))
-  );
-  return match || { type: 'Industrial Equipment', issue: 'General fault pattern detected', confidence: 75 };
-}
+// Data arrays (MOCK_MACHINES, INDIAN_LOCATIONS, MOCK_MESSAGES) moved to src/data/
 
-// Helper component for reports
-function ReportField({ label, value }) {
-  return (
-    <div className="space-y-1">
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-        {label}
-      </p>
-      <p className="text-sm font-black text-slate-900 tracking-tight">
-        {value}
-      </p>
-    </div>
-  );
-}
 
-// Simple popup modal for feedback
-function PopupModal({ title = "Support Ticket Submitted", message, onClose }) {
-  return (
-    <div className="modal-overlay">
-      <div
-        className="premium-modal animate-fade-in"
-        style={{ maxWidth: "400px" }}
-      >
-        <div className="p-10 text-center space-y-6">
-          <div className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto shadow-sm">
-            <CheckCircle
-              className="w-10 h-10 text-[var(--success)]"
-              strokeWidth={3}
-            />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-              {title}
-            </h3>
-            <p className="text-slate-500 font-medium text-sm leading-relaxed">
-              {message}
-            </p>
-          </div>
-          <button
-            className="main-action-btn h-12 rounded-xl text-[10px]"
-            onClick={onClose}
-          >
-            Acknowledge
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// [NEW] FALLBACK MOCK DATA
-const MOCK_MACHINES = [
-  {
-    id: "local-1",
-    name: "Hydraulic Press #08",
-    machine_type: "Hydraulic Press",
-    oem: "Hydra-Tech Germany",
-    model_year: 1998,
-    condition_score: 45,
-  },
-  {
-    id: "local-2",
-    name: "CNC Mill X-200",
-    machine_type: "CNC Concentric",
-    oem: "Siemens Industrial",
-    model_year: 2015,
-    condition_score: 92,
-  },
-  {
-    id: "local-3",
-    name: "Backup Generator G-5",
-    machine_type: "Generator",
-    oem: "Caterpillar",
-    model_year: 2020,
-    condition_score: 98,
-  },
-];
-
-// [NEW] INDIAN INDUSTRIAL CITIES & STATES
-const INDIAN_LOCATIONS = [
-  {
-    state: "Maharashtra",
-    cities: ["Mumbai", "Pune", "Nagpur", "Nasik", "Aurangabad", "Thane"],
-  },
-  {
-    state: "Karnataka",
-    cities: [
-      "Bagalkot",
-      "Ballari",
-      "Belagavi",
-      "Bengaluru Rural",
-      "Bengaluru Urban",
-      "Bidar",
-      "Chamarajanagar",
-      "Chikballapur",
-      "Chikkamagaluru",
-      "Chitradurga",
-      "Dakshina Kannada",
-      "Davanagere",
-      "Dharwad",
-      "Gadag",
-      "Hassan",
-      "Haveri",
-      "Kalaburagi",
-      "Kodagu",
-      "Kolar",
-      "Koppal",
-      "Mandya",
-      "Mysuru",
-      "Raichur",
-      "Ramanagara",
-      "Shivamogga",
-      "Tumakuru",
-      "Udupi",
-      "Uttara Kannada",
-      "Vijayapura",
-      "Yadgir",
-      "Vijayanagara",
-    ],
-  },
-  {
-    state: "Tamil Nadu",
-    cities: [
-      "Chennai",
-      "Coimbatore",
-      "Madurai",
-      "Tiruchirappalli",
-      "Salem",
-      "Erode",
-    ],
-  },
-  {
-    state: "Gujarat",
-    cities: [
-      "Ahmedabad",
-      "Surat",
-      "Vadodara",
-      "Rajkot",
-      "Bhavnagar",
-      "Jamnagar",
-    ],
-  },
-  {
-    state: "Delhi",
-    cities: [
-      "New Delhi",
-      "North Delhi",
-      "South Delhi",
-      "West Delhi",
-      "East Delhi",
-    ],
-  },
-  {
-    state: "Telangana",
-    cities: ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Ramagundam"],
-  },
-  {
-    state: "West Bengal",
-    cities: ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri"],
-  },
-  {
-    state: "Uttar Pradesh",
-    cities: ["Noida", "Kanpur", "Lucknow", "Ghaziabad", "Agra", "Varanasi"],
-  },
-  {
-    state: "Punjab",
-    cities: ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda"],
-  },
-  {
-    state: "Haryana",
-    cities: ["Gurugram", "Faridabad", "Panipat", "Ambala", "Karnal"],
-  },
-  {
-    state: "Rajasthan",
-    cities: ["Jaipur", "Jodhpur", "Kota", "Bikaner", "Ajmer"],
-  },
-  {
-    state: "Kerala",
-    cities: ["Kochi", "Thiruvananthapuram", "Kozhikode", "Thrissur", "Kollam"],
-  },
-];
-
-const MOCK_MESSAGES = [
-  {
-    id: 101,
-    chatId: 1,
-    sender: "expert",
-    text: "Systems check complete. We are seeing some pressure variance.",
-    time: "10:04 AM",
-  },
-  {
-    id: 102,
-    chatId: 1,
-    sender: "user",
-    text: "Noted. Is it critical?",
-    time: "10:12 AM",
-  },
-  {
-    id: 103,
-    chatId: 1,
-    sender: "expert",
-    text: "Not yet, but we recommend scheduling a valve seal replacement.",
-    time: "10:15 AM",
-  },
-  {
-    id: 104,
-    chatId: 1,
-    sender: "expert",
-    text: '[INVOICE]:{"amount":"4500", "desc":"Valve Seal Replacement"}',
-    type: "invoice",
-    amount: "4500",
-    desc: "Valve Seal Replacement",
-    time: "10:18 AM",
-  },
-];
-
-// Helper to parse special message types (Invoices)
-const parseMessageBody = (text) => {
-  if (text && text.startsWith("[INVOICE]:")) {
-    try {
-      const payload = JSON.parse(text.substring(10));
-      return { type: "invoice", amount: payload.amount, desc: payload.desc };
-    } catch (e) {
-      return { type: "text", text: text };
-    }
-  }
-  return { type: "text", text: text };
-};
+// parseMessageBody function moved to src/utils/messageUtils.js
 
 function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -434,7 +197,7 @@ function App() {
 
   const getExpertTermsStorageKey = useCallback((user) => {
     const identifier = user?.id || user?.user_id || user?.email || "expert";
-    return `origiNode_expert_terms_accepted_${identifier}`;
+    return `IndEase_expert_terms_accepted_${identifier}`;
   }, []);
 
   // Instead of auto-logging in from localStorage on startup:
@@ -737,26 +500,8 @@ function App() {
   // [NEW] Social Account Selector States
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [socialProvider, setSocialProvider] = useState("");
-  const simulatedAccounts = [
-    {
-      name: "Bhuvan B H",
-      email: "bhuvan@originode.tech",
-      avatar:
-        "https://ui-avatars.com/api/?name=Bhuvan+BH&background=020617&color=fff",
-    },
-    {
-      name: "Technical Admin",
-      email: "admin@originode.com",
-      avatar:
-        "https://ui-avatars.com/api/?name=Admin&background=1e293b&color=fff",
-    },
-    {
-      name: "Industrial Guest",
-      email: "guest.identity@industries.in",
-      avatar:
-        "https://ui-avatars.com/api/?name=Guest&background=334155&color=fff",
-    },
-  ];
+  // simulatedAccounts array moved to src/data/mockData.js
+
 
   // [NEW] VIDEO DIAGNOSIS STATES
   const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
@@ -795,6 +540,19 @@ function App() {
     useState(false);
   const [postPaymentRatingContext, setPostPaymentRatingContext] =
     useState(null);
+
+  // ── Escrow Confirmation States ─────────────────────────────────────────────
+  const [pendingArrivalConfirmation, setPendingArrivalConfirmation] = useState(null);
+  // { jobId, expertName }
+  const [pendingCompletionConfirmation, setPendingCompletionConfirmation] = useState(null);
+  // { jobId, expertName }
+  const [showDisputeForm, setShowDisputeForm] = useState(false);
+  const [disputeContext, setDisputeContext] = useState(null);
+  // { jobId } — which job the dispute belongs to
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+  const [disputeSuccess, setDisputeSuccess] = useState(false);
+  // ──────────────────────────────────────────────────────────────────────────
   const [ratedJobIds, setRatedJobIds] = useState(() => {
     try {
       return new Set(JSON.parse(localStorage.getItem("ratedJobIds") || "[]"));
@@ -1584,6 +1342,88 @@ function App() {
       setToast({ message: `A job you waitlisted is now available: ${data.machine_name}. Check incoming requests!`, type: 'success' });
     });
 
+    // ── Escrow Confirmation Events (consumer-side) ─────────────────────────
+    newSocket.on('expert_started_work', (data) => {
+      if (role === 'consumer') {
+        setPendingArrivalConfirmation({ jobId: data.jobId, expertName: data.expertName });
+      }
+    });
+
+    newSocket.on('expert_marked_done', (data) => {
+      if (role === 'consumer') {
+        setPendingCompletionConfirmation({ jobId: data.jobId, expertName: data.expertName });
+      }
+    });
+
+    newSocket.on('milestone1_released', () => {
+      setToast({ message: 'Arrival confirmed. Milestone 1 released to expert.', type: 'success' });
+    });
+
+    newSocket.on('milestone2_released', () => {
+      setToast({ message: 'Work confirmed complete. Final payment released.', type: 'success' });
+    });
+
+    newSocket.on('milestone1_auto_released', () => {
+      setToast({ message: 'Milestone 1 was auto-released after 24 hours.', type: 'info' });
+    });
+
+    newSocket.on('milestone2_auto_released', () => {
+      setToast({ message: 'Final payment was auto-released after 72 hours.', type: 'info' });
+    });
+
+    newSocket.on('dispute_raised', () => {
+      setToast({ message: 'A dispute has been raised. Escrow is frozen.', type: 'warning' });
+    });
+    // ──────────────────────────────────────────────────────────────────────
+
+    // ── Escrow Expert Events (producer-side) ─────────────────────────────
+    newSocket.on('milestone1_released', (data) => {
+      if (role === 'producer') {
+        setToast({ message: '💰 Consumer confirmed your arrival! Milestone 1 payment released.', type: 'success' });
+        // Enable Mark Work Done by updating the job's milestone1_released flag
+        setActiveJobs(prev => prev.map(j =>
+          String(j.id) === String(data?.jobId) ? { ...j, milestone1_released: true } : j
+        ));
+      }
+    });
+
+    newSocket.on('milestone2_released', (data) => {
+      if (role === 'producer') {
+        setToast({ message: '🎉 Job complete! Final payment released to you.', type: 'success' });
+        setActiveJobs(prev => prev.map(j =>
+          String(j.id) === String(data?.jobId) ? { ...j, milestone2_released: true, status: 'completed' } : j
+        ));
+      }
+    });
+
+    newSocket.on('milestone1_auto_released', (data) => {
+      if (role === 'producer') {
+        setToast({ message: '⏱️ Milestone 1 auto-released. You can now mark work as done.', type: 'info' });
+        setActiveJobs(prev => prev.map(j =>
+          String(j.id) === String(data?.jobId) ? { ...j, milestone1_released: true } : j
+        ));
+      }
+    });
+
+    newSocket.on('milestone2_auto_released', (data) => {
+      if (role === 'producer') {
+        setToast({ message: '⏱️ Final payment auto-released. Job marked complete.', type: 'info' });
+        setActiveJobs(prev => prev.map(j =>
+          String(j.id) === String(data?.jobId) ? { ...j, milestone2_released: true, status: 'completed' } : j
+        ));
+      }
+    });
+
+    newSocket.on('dispute_raised', (data) => {
+      if (role === 'producer') {
+        setToast({ message: '⚠️ Consumer raised a dispute. Escrow is frozen. Admin will review.', type: 'warning' });
+        setActiveJobs(prev => prev.map(j =>
+          String(j.id) === String(data?.jobId) ? { ...j, disputed: true } : j
+        ));
+      }
+    });
+    // ─────────────────────────────────────────────────────────────────────
+
     newSocket.on('disconnect', () => setSocketConnected(false));
     newSocket.on('connect',    () => setSocketConnected(true));
 
@@ -1635,6 +1475,55 @@ function App() {
     );
   }, [notifications]);
 
+  // ── Escrow Confirmation Handlers ──────────────────────────────────────────────
+  const handleConfirmArrival = async (jobId) => {
+    try {
+      await api.patch(`/jobs/${jobId}/confirm-arrival`);
+      setPendingArrivalConfirmation(null);
+      setToast({ message: 'Arrival confirmed ✔️ Milestone 1 released to expert.', type: 'success' });
+    } catch (err) {
+      setToast({ message: err.response?.data?.error || 'Failed to confirm arrival', type: 'error' });
+    }
+  };
+
+  const handleConfirmCompletion = async (jobId) => {
+    try {
+      await api.patch(`/jobs/${jobId}/confirm-complete`);
+      setPendingCompletionConfirmation(null);
+      setToast({ message: 'Work confirmed complete ✔️ Final payment released.', type: 'success' });
+    } catch (err) {
+      setToast({ message: err.response?.data?.error || 'Failed to confirm completion', type: 'error' });
+    }
+  };
+
+  const handleRaiseDispute = async () => {
+    if (!disputeReason.trim()) {
+      setToast({ message: 'Please describe the issue before submitting.', type: 'error' });
+      return;
+    }
+    setDisputeSubmitting(true);
+    try {
+      await api.patch(`/jobs/${disputeContext?.jobId}/raise-dispute`, { reason: disputeReason.trim() });
+      setDisputeSuccess(true);
+      setDisputeReason('');
+    } catch (err) {
+      setToast({ message: err.response?.data?.error || 'Failed to raise dispute', type: 'error' });
+    } finally {
+      setDisputeSubmitting(false);
+    }
+  };
+
+  const openDisputeForm = (jobId) => {
+    // Close whichever confirmation modal is open
+    setPendingArrivalConfirmation(null);
+    setPendingCompletionConfirmation(null);
+    setDisputeContext({ jobId });
+    setDisputeReason('');
+    setDisputeSuccess(false);
+    setShowDisputeForm(true);
+  };
+  // ──────────────────────────────────────────────────────────────────────────────
+
   const addNotification = (title, message) => {
     setNotifications((prev) => {
       const newNotif = {
@@ -1676,25 +1565,8 @@ function App() {
 
 
 
-  // [NEW] FAQ LIST FOR SEARCH
-  const faqs = [
-    {
-      q: "What if my manufacturer is no longer in business?",
-      a: "Use the Legacy Search tab to find the company that acquired their patents or assets. Our database contains information about successor companies and can help you trace the lineage of your equipment.",
-    },
-    {
-      q: "How do I become a Verified Expert?",
-      a: "Switch to Producer role and submit your industrial certifications through the Expert Portal. Our team will verify your credentials within 3-5 business days.",
-    },
-    {
-      q: "How long does expert response typically take?",
-      a: "Our verified experts typically respond within 2-4 hours during business hours. For urgent issues, you can upgrade to priority support for guaranteed 30-minute response times.",
-    },
-    {
-      q: "Can I export my service history?",
-      a: "Yes! Go to your Fleet Overview, select machines, and use the Export Report button to download service history as PDF or CSV for your records.",
-    },
-  ];
+  // faqs array moved to src/data/faqData.js
+
 
   // [NEW] HELP & SUPPORT UNLOCK STATES
   const [showCallModal, setShowCallModal] = useState(false);
@@ -1784,27 +1656,8 @@ function App() {
     }
   };
 
-  // [NEW VIDEO LIST]
-  const tutorialVideos = [
-    {
-      id: 1,
-      title: "How to trace legacy machines",
-      duration: "5:20",
-      thumbnail: "📹",
-    },
-    {
-      id: 2,
-      title: "Uploading diagnosis videos",
-      duration: "3:45",
-      thumbnail: "🎥",
-    },
-    {
-      id: 3,
-      title: "Managing service history",
-      duration: "8:10",
-      thumbnail: "📼",
-    },
-  ];
+  // tutorialVideos array moved to src/data/faqData.js
+
 
   // [NEW DOC LIST]
   const docLibrary = [
@@ -2880,6 +2733,10 @@ function App() {
   const handleDeleteMachine = (id, e) => {
     // Prevent event bubbling if triggered from a deeper element (like a menu)
     if (e) e.stopPropagation();
+    if (nodeToDelete && nodeToDelete.id === id && !e) {
+      confirmNodeDeletion();
+      return;
+    }
     const machine = machines.find((m) => m.id === id);
     if (machine) {
       setNodeToDelete(machine);
@@ -3110,7 +2967,7 @@ function App() {
       const res = await api.get('/jobs/my');
       const myJobs = res.data || [];
       const activeFromDB = myJobs
-        .filter(j => ['accepted', 'in_progress', 'started', 'quote_approved', 'en_route', 'payment_pending', 'pending_confirmation'].includes(j.status))
+        .filter(j => ['accepted', 'in_progress', 'started', 'quote_approved', 'en_route', 'payment_pending', 'pending_confirmation', 'work_started', 'work_done'].includes(j.status))
         .map(j => ({
           id: j.id,
           machine_name: j.machine_name,
@@ -3118,12 +2975,16 @@ function App() {
           client_name: j.other_party,
           status: j.status,
           rawStatus: j.status,
-          progressStage: ['in_progress', 'started'].includes(j.status) ? 'in_progress'
+          progressStage: ['in_progress', 'started', 'work_started', 'work_done'].includes(j.status) ? 'in_progress'
             : j.status === 'en_route' ? 'en_route'
             : 'accepted',
           other_party: j.other_party,
           created_at: j.created_at,
           quoted_cost: j.quoted_cost,
+          // ── Escrow tracking fields ──
+          milestone1_released: j.milestone1_released || false,
+          milestone2_released: j.milestone2_released || false,
+          disputed: j.disputed || false,
         }));
       setActiveJobs(activeFromDB);
     } catch (err) {
@@ -3188,6 +3049,33 @@ function App() {
       setToast({ message: 'Failed to submit completion', type: 'error' });
     }
   };
+
+  // ── Escrow Expert Handlers ───────────────────────────────────────────────
+  const handleMarkStarted = async (jobId) => {
+    try {
+      await api.patch(`/jobs/${jobId}/mark-started`);
+      setToast({ message: '🚀 Work started! Waiting for consumer to confirm your arrival…', type: 'success' });
+      // Optimistically update job status so the button disables immediately
+      setActiveJobs(prev => prev.map(j =>
+        j.id === jobId ? { ...j, status: 'work_started', rawStatus: 'work_started' } : j
+      ));
+    } catch (err) {
+      setToast({ message: err?.response?.data?.error || 'Failed to mark started', type: 'error' });
+    }
+  };
+
+  const handleMarkDone = async (jobId) => {
+    try {
+      await api.patch(`/jobs/${jobId}/mark-done`);
+      setToast({ message: '✅ Work marked done! Waiting for consumer to confirm completion…', type: 'success' });
+      setActiveJobs(prev => prev.map(j =>
+        j.id === jobId ? { ...j, status: 'work_done', rawStatus: 'work_done' } : j
+      ));
+    } catch (err) {
+      setToast({ message: err?.response?.data?.error || 'Failed to mark work done', type: 'error' });
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────
 
   // [NEW] LISTEN FOR JOB UPDATES (INVOICES)
   useEffect(() => {
@@ -4473,228 +4361,13 @@ function App() {
           </motion.div>
         </div>
       )}
-      {showExpertProfileModal && selectedExpert && (
-        <div
-          className="modal-overlay"
-          onClick={(e) =>
-            e.target.className === "modal-overlay" &&
-            setShowExpertProfileModal(false)
-          }
-        >
-          <div
-            className="premium-modal relative"
-            style={{
-              width: "100%",
-              maxWidth: "480px",
-              borderRadius: "16px",
-              background: "white",
-              boxShadow:
-                "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-            }}
-          >
-            {/* Loading State */}
-            {selectedExpert.loading && (
-              <div className="p-8 text-center space-y-6">
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="w-24 h-24 bg-slate-200 rounded-full mb-4"></div>
-                  <div className="h-6 bg-slate-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/3 mb-6"></div>
-                  <div className="w-full grid grid-cols-2 gap-4">
-                    <div className="h-20 bg-slate-200 rounded-2xl"></div>
-                    <div className="h-20 bg-slate-200 rounded-2xl"></div>
-                  </div>
-                </div>
-              </div>
-            )}
+      <ExpertProfileModal
+        show={showExpertProfileModal}
+        onClose={() => setShowExpertProfileModal(false)}
+        selectedExpert={selectedExpert}
+        cn={cn}
+      />
 
-            {/* Error State */}
-            {!selectedExpert.loading && selectedExpert.error && (
-              <div className="p-8 text-center space-y-4">
-                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <AlertCircle size={32} />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  Profile Error
-                </h3>
-                <p className="text-slate-500 text-sm">
-                  Could not load profile. Please try again.
-                </p>
-                <button
-                  className="mt-6 w-full h-12 bg-slate-100 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-200 transition-all font-medium"
-                  onClick={() => setShowExpertProfileModal(false)}
-                >
-                  Close
-                </button>
-              </div>
-            )}
-
-            {/* Success State */}
-            {!selectedExpert.loading && !selectedExpert.error && (
-              <>
-                <div className="modal-header-premium p-6 border-b border-slate-100">
-                  <h3 className="text-lg font-semibold text-slate-900 tracking-tight">
-                    Expert Profile
-                  </h3>
-                  <button
-                    className="modal-close-btn"
-                    onClick={() => setShowExpertProfileModal(false)}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div className="modal-body-premium p-6 text-center space-y-6">
-                  {/* Top Section */}
-                  <div className="relative mx-auto w-24 h-24">
-                    <div className="w-24 h-24 rounded-full bg-[#0d9488] flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-teal-500/20">
-                      {selectedExpert.avatar}
-                    </div>
-                    <div
-                      className={`absolute bottom-1 right-1 w-6 h-6 border-4 border-white rounded-full ${selectedExpert.online ? "bg-emerald-500" : "bg-slate-300"}`}
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <h4 className="text-2xl font-bold text-slate-900 tracking-tight">
-                      {selectedExpert.name}
-                    </h4>
-                    <p className="text-sm font-medium text-slate-500">
-                      {selectedExpert.specialization}
-                    </p>
-
-                    {/* Badges Section */}
-                    <div className="flex items-center justify-center gap-2 pt-2 pb-1">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-600 text-xs font-bold tracking-tight">
-                        <ShieldCheck size={14} />
-                        {selectedExpert.badge}
-                      </span>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 text-xs font-bold tracking-tight">
-                        ★ {selectedExpert.rating}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Details Section */}
-                  <div className="grid grid-cols-2 gap-4 text-left border-t border-slate-100 pt-6">
-                    <div className="col-span-2 bg-slate-50 p-4 rounded-2xl mb-2 flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          Reputation Level
-                        </p>
-                        <p
-                          className={cn(
-                            "text-base font-black uppercase tracking-tight",
-                            selectedExpert.level === "Elite"
-                              ? "text-purple-600"
-                              : selectedExpert.level === "Gold"
-                                ? "text-amber-600"
-                                : selectedExpert.level === "Silver"
-                                  ? "text-emerald-600"
-                                  : selectedExpert.level === "Bronze"
-                                    ? "text-teal-600"
-                                    : "text-slate-500",
-                          )}
-                        >
-                          {selectedExpert.level} Tier
-                        </p>
-                      </div>
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">
-                        <Award
-                          size={20}
-                          className={cn(
-                            selectedExpert.level === "Elite"
-                              ? "text-purple-600"
-                              : "text-slate-400",
-                          )}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                        Machine Types
-                      </p>
-                      <p className="text-[13px] font-semibold text-slate-900 leading-tight">
-                        {selectedExpert.machines}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                        Service City
-                      </p>
-                      <p className="text-[13px] font-semibold text-slate-900 flex items-center gap-1">
-                        <LocationIcon size={14} className="text-slate-400" />{" "}
-                        {selectedExpert.city}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                        Experience
-                      </p>
-                      <p className="text-[13px] font-semibold text-slate-900">
-                        {selectedExpert.experience} Years
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                        Success Rate
-                      </p>
-                      <p className="text-[13px] font-semibold text-emerald-600">
-                        98% Verified
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                        Member Since
-                      </p>
-                      <p className="text-[13px] font-semibold text-slate-900">
-                        {selectedExpert.memberSince}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                        Typical Speed
-                      </p>
-                      <p className="text-[13px] font-semibold text-teal-600">
-                        {selectedExpert.responseTime}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-left bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100/50 space-y-3">
-                    <div>
-                      <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">
-                        Technical Qualification
-                      </p>
-                      <p className="text-sm font-semibold text-slate-700 flex items-center gap-2 italic">
-                        <AssignmentIcon size={14} className="text-indigo-500" />{" "}
-                        {selectedExpert.qualification}
-                      </p>
-                    </div>
-                    <div className="pt-2 border-t border-indigo-100/50 flex items-center gap-2">
-                      <ShieldCheck size={14} className="text-emerald-500" />
-                      <p className="text-[11px] font-bold text-slate-500">
-                        This expert is verified by IndEase and has completed{" "}
-                        {selectedExpert.jobsCompleted} jobs.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Bottom / Close */}
-                  <div className="pt-2">
-                    <button
-                      className="w-full h-12 bg-slate-100 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-200 transition-all font-medium active:scale-95"
-                      onClick={() => setShowExpertProfileModal(false)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {showPaymentSuccessModal && paymentSuccessData && (
         <div className="modal-overlay">
@@ -4857,263 +4530,13 @@ function App() {
         </div>
       )}
 
-      {showCheckoutModal && checkoutDetails && (
-        <div className="modal-overlay">
-          <div
-            className="premium-modal"
-            style={{
-              maxWidth: "480px",
-              borderRadius: "16px",
-              background: "white",
-              boxShadow:
-                "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-            }}
-          >
-            <div className="modal-header-premium border-b border-slate-100 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 tracking-tight">
-                Payment Summary
-              </h3>
-              <button
-                className="modal-close-btn"
-                onClick={() => setShowCheckoutModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
+      <CheckoutModal show={showCheckoutModal} onClose={() => setShowCheckoutModal(false)} checkoutDetails={checkoutDetails} checkoutDesc={checkoutDesc} onConfirm={initiateRazorpayCheckout} />
 
-            <div className="modal-body-premium p-6 space-y-4">
-              <div className="space-y-3">
-                {[
-                  {
-                    label: "Service Cost",
-                    value: `₹${checkoutDetails.providerPrice}`,
-                  },
-                  {
-                    label: "Platform Fee",
-                    value: `₹${checkoutDetails.commission}`,
-                  },
-                  { label: "GST", value: `₹${checkoutDetails.gst}` },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className="text-sm text-[#6B7280]">{item.label}</span>
-                    <strong className="text-sm font-semibold text-slate-900">
-                      {item.value}
-                    </strong>
-                  </div>
-                ))}
-              </div>
+      <AddMachineModal show={showAddMachineModal} onClose={() => setShowAddMachineModal(false)} newMachineData={newMachineData} setNewMachineData={setNewMachineData} onAdd={handleAddMachine} />
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  Total
-                </span>
-                <span className="text-xl font-bold text-[#0d9488]">
-                  ₹{checkoutDetails.totalPayable}
-                </span>
-              </div>
+      <DeleteAccountModal show={showDeleteModal && !isDemo} onClose={() => setShowDeleteModal(false)} email={email} onConfirm={() => { setView("landing"); setShowDeleteModal(false); }} />
 
-              <div className="grid grid-cols-2 gap-4 pt-4">
-                <button
-                  className="secondary-action-btn h-12 rounded-lg"
-                  onClick={() => setShowCheckoutModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="main-action-btn h-12 rounded-lg bg-[#0d9488]"
-                  onClick={initiateRazorpayCheckout}
-                >
-                  Pay ₹{checkoutDetails.totalPayable}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showAddMachineModal && (
-        <div
-          className="modal-overlay"
-          onClick={(e) =>
-            e.target.className === "modal-overlay" &&
-            setShowAddMachineModal(false)
-          }
-        >
-          <div className="premium-modal">
-            <div className="modal-header-premium">
-              <h3 className="modal-title">Add Machine</h3>
-
-              <button
-                className="modal-close-btn"
-                onClick={() => setShowAddMachineModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="modal-body-premium space-y-4">
-              <div className="input-field-modern">
-                <label htmlFor="machine-name">Machine Name</label>
-                <input
-                  id="machine-name"
-                  name="machine-name"
-                  type="text"
-                  placeholder="e.g. Hydraulic Press #99"
-                  value={newMachineData.name}
-                  onChange={(e) =>
-                    setNewMachineData({
-                      ...newMachineData,
-                      name: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="input-field-modern">
-                  <label htmlFor="machine-type">Machine Type</label>
-                  <select
-                    id="machine-type"
-                    name="machine-type"
-                    value={newMachineData.machine_type}
-                    onChange={(e) =>
-                      setNewMachineData({
-                        ...newMachineData,
-                        machine_type: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select Type</option>
-                    <option value="Hydraulic Press">Hydraulic Press</option>
-                    <option value="CNC Concentric">CNC Concentric</option>
-                    <option value="Industrial Loom">Industrial Loom</option>
-                    <option value="Generator">Generator</option>
-                  </select>
-                </div>
-                <div className="input-field-modern">
-                  <label htmlFor="machine-year">Year of Manufacture</label>
-                  <input
-                    id="machine-year"
-                    name="machine-year"
-                    type="number"
-                    placeholder="2024"
-                    value={newMachineData.model_year}
-                    onChange={(e) =>
-                      setNewMachineData({
-                        ...newMachineData,
-                        model_year: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="input-field-modern">
-                <label htmlFor="machine-oem">Manufacturer</label>
-                <input
-                  id="machine-oem"
-                  name="machine-oem"
-                  type="text"
-                  placeholder="e.g. Hydra-Tech Germany"
-                  value={newMachineData.oem}
-                  onChange={(e) =>
-                    setNewMachineData({
-                      ...newMachineData,
-                      oem: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <button
-                className="main-action-btn h-11 rounded-lg mt-4 bg-slate-900"
-                onClick={handleAddMachine}
-              >
-                Add Machine
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDeleteModal && !isDemo && (
-        <div className="modal-overlay">
-          <div className="premium-modal" style={{ maxWidth: "440px" }}>
-            <div className="p-12 text-center space-y-8">
-              <div className="w-20 h-20 bg-red-50 border border-red-100 rounded-[1.5rem] flex items-center justify-center mx-auto shadow-sm">
-                <Trash2
-                  className="w-10 h-10 text-[var(--danger)]"
-                  strokeWidth={2.5}
-                />
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-3xl font-black text-red-950 tracking-tight">
-                  Identity Purge
-                </h3>
-                <p className="text-slate-500 font-medium text-sm leading-relaxed">
-                  This will permanently wipe all machine nodes and historical
-                  records associated with <strong>{email}</strong>.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <button
-                  className="main-action-btn h-14 rounded-2xl bg-[var(--danger)] text-white"
-                  onClick={() => {
-                    setView("landing");
-                    setShowDeleteModal(false);
-                  }}
-                >
-                  Yes, Execute Purge
-                </button>
-                <button
-                  className="secondary-action-btn h-14 border-none text-slate-400"
-                  onClick={() => setShowDeleteModal(false)}
-                >
-                  Cancel Protocol
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {nodeToDelete && (
-        <div className="modal-overlay">
-          <div className="premium-modal" style={{ maxWidth: "440px" }}>
-            <div className="p-12 text-center space-y-8">
-              <div className="w-20 h-20 bg-[var(--warning)] border border-amber-100 rounded-[1.5rem] flex items-center justify-center mx-auto shadow-sm">
-                <AlertCircle
-                  className="w-10 h-10 text-[var(--warning)]"
-                  strokeWidth={2.5}
-                />
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                  Decommission
-                </h3>
-                <p className="text-slate-500 font-medium text-sm leading-relaxed">
-                  Are you sure you want to remove{" "}
-                  <strong>{nodeToDelete.name}</strong> from your active fleet?
-                </p>
-              </div>
-              <div className="space-y-4">
-                <button
-                  className="main-action-btn h-14 rounded-2xl bg-slate-900"
-                  onClick={confirmNodeDeletion}
-                >
-                  Confirm Removal
-                </button>
-                <button
-                  className="secondary-action-btn h-14 border-none text-slate-400"
-                  onClick={() => setNodeToDelete(null)}
-                >
-                  Abor Protocol
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DecommissionModal nodeToDelete={nodeToDelete} onClose={() => setNodeToDelete(null)} onConfirm={() => { handleDeleteMachine(nodeToDelete.id); setNodeToDelete(null); }} />
 
       {showDiagnosisModal && (
         <div
@@ -6687,6 +6110,8 @@ function App() {
                 isDemo={isDemo}
                 onProgressUpdate={handleUpdateJobProgress}
                 onMarkArrived={handleMarkArrived}
+                onMarkStarted={handleMarkStarted}
+                onMarkDone={handleMarkDone}
                 onMarkComplete={handleMarkJobComplete}
                 onOpenChat={(jobId) => {
                   const chat = producerChats.find(c => c.jobId === jobId || c.id === jobId);
@@ -7337,6 +6762,169 @@ function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ── Escrow: Expert Started Work — Confirm Arrival Modal ───────── */}
+        <AnimatePresence>
+          {pendingArrivalConfirmation && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4"
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-slate-100"
+              >
+                <div className="w-16 h-16 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Wrench size={32} />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 text-center mb-2">
+                  Expert Has Arrived
+                </h3>
+                <p className="text-sm text-slate-500 text-center mb-6">
+                  <strong>{pendingArrivalConfirmation.expertName}</strong> has started work on your request.
+                  Please confirm their arrival to release the first payment milestone.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => handleConfirmArrival(pendingArrivalConfirmation.jobId)}
+                    className="w-full h-12 rounded-xl bg-teal-600 text-white font-bold text-sm hover:bg-teal-700 transition-all"
+                  >
+                    ✓ Yes, Confirm Arrival
+                  </button>
+                  <button
+                    onClick={() => openDisputeForm(pendingArrivalConfirmation.jobId)}
+                    className="w-full h-12 rounded-xl border border-red-200 text-red-600 font-bold text-sm hover:bg-red-50 transition-all"
+                  >
+                    Raise Dispute
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Escrow: Expert Marked Done — Confirm Completion Modal ─────── */}
+        <AnimatePresence>
+          {pendingCompletionConfirmation && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4"
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-slate-100"
+              >
+                <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle size={32} />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 text-center mb-2">
+                  Expert Marked Work Complete
+                </h3>
+                <p className="text-sm text-slate-500 text-center mb-6">
+                  <strong>{pendingCompletionConfirmation.expertName}</strong> says the work is done.
+                  Confirm to release the final payment milestone.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => handleConfirmCompletion(pendingCompletionConfirmation.jobId)}
+                    className="w-full h-12 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-all"
+                  >
+                    ✓ Yes, Work is Complete
+                  </button>
+                  <button
+                    onClick={() => openDisputeForm(pendingCompletionConfirmation.jobId)}
+                    className="w-full h-12 rounded-xl border border-red-200 text-red-600 font-bold text-sm hover:bg-red-50 transition-all"
+                  >
+                    Raise Dispute
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Escrow: Dispute Form Modal ────────────────────────────────── */}
+        <AnimatePresence>
+          {showDisputeForm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[310] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4"
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-slate-100"
+              >
+                {disputeSuccess ? (
+                  <>
+                    <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <AlertCircle size={32} />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 text-center mb-2">
+                      Dispute Raised
+                    </h3>
+                    <p className="text-sm text-slate-500 text-center mb-6">
+                      Your dispute has been submitted. Escrow is now frozen. Admin will review within 24 hours.
+                    </p>
+                    <button
+                      onClick={() => { setShowDisputeForm(false); setDisputeSuccess(false); }}
+                      className="w-full h-12 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-900 transition-all"
+                    >
+                      Close
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <AlertCircle size={32} />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 text-center mb-2">
+                      Raise a Dispute
+                    </h3>
+                    <p className="text-sm text-slate-500 text-center mb-4">
+                      Describe the issue clearly. Escrow will be frozen until admin reviews.
+                    </p>
+                    <textarea
+                      value={disputeReason}
+                      onChange={(e) => setDisputeReason(e.target.value)}
+                      placeholder="Describe the issue..."
+                      rows={4}
+                      className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-red-300 mb-4"
+                    />
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={handleRaiseDispute}
+                        disabled={disputeSubmitting}
+                        className="w-full h-12 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-all disabled:opacity-60"
+                      >
+                        {disputeSubmitting ? 'Submitting…' : 'Submit Dispute'}
+                      </button>
+                      <button
+                        onClick={() => setShowDisputeForm(false)}
+                        disabled={disputeSubmitting}
+                        className="w-full text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors py-2"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </DashboardLayout>
       </>
     );

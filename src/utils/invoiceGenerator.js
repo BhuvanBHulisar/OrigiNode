@@ -231,7 +231,7 @@ export const generateInvoicePDF = (record) => {
   doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);
   doc.text("Industrial Machine Service Platform", 14, 286);
-  doc.text("support: originode7@gmail.com", 14, 291);
+  doc.text("support: support@indease.com", 14, 291);
 
   doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);

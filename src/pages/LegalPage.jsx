@@ -87,7 +87,7 @@ function LegalPage({ title, effectiveDate, sections }) {
               Privacy Policy
             </button>
             <span className="text-slate-300">|</span>
-            <a href="mailto:support@originode.com" className="transition-colors hover:text-teal-600">
+            <a href="mailto:support@indease.com" className="transition-colors hover:text-teal-600">
               Contact Us
             </a>
           </div>

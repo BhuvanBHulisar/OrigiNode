@@ -3,7 +3,7 @@ import { Bell, ChevronDown, UserCircle, Sparkles, AlertCircle, Settings, LogOut 
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from './ui/base';
 
-const Topbar = ({ user, notifications = [], role, onMarkAsRead, onMarkAllRead, isDemo, onMenuClick, setActiveTab, onLogout }) => {
+const Topbar = ({ user, notifications = [], role, onMarkAsRead, onMarkAllRead, onClearNotifs, isDemo, onMenuClick, setActiveTab, onLogout }) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [showAllNotif, setShowAllNotif] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -126,7 +126,22 @@ const Topbar = ({ user, notifications = [], role, onMarkAsRead, onMarkAllRead, i
               >
                  <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-slate-50/50">
                     <h3 className="text-[11px] font-semibold text-slate-500 tracking-widest">Notifications</h3>
-                    <button onClick={() => onMarkAllRead && onMarkAllRead()} className="text-[10px] text-[#0d9488] font-semibold hover:underline">Mark all read</button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => onMarkAllRead && onMarkAllRead()}
+                        className="text-[10px] text-[#0d9488] font-semibold hover:underline"
+                      >
+                        Mark all read
+                      </button>
+                      {notifications.length > 0 && (
+                        <button
+                          onClick={() => { onClearNotifs && onClearNotifs(); }}
+                          className="text-[10px] text-red-500 font-semibold hover:underline"
+                        >
+                          Clear all
+                        </button>
+                      )}
+                    </div>
                  </div>
                  
                  <div className="max-h-80 overflow-y-auto no-scrollbar">
@@ -260,6 +275,14 @@ const Topbar = ({ user, notifications = [], role, onMarkAsRead, onMarkAllRead, i
                 >
                   Mark all read
                 </button>
+                {notifications.length > 0 && (
+                  <button
+                    onClick={() => { onClearNotifs && onClearNotifs(); }}
+                    style={{fontSize:'12px', color:'#ef4444', fontWeight:600, background:'none', border:'none', cursor:'pointer'}}
+                  >
+                    Clear all
+                  </button>
+                )}
                 <button
                   onClick={() => setShowAllNotif(false)}
                   style={{background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:'20px', lineHeight:1}}
@@ -336,10 +359,20 @@ const Topbar = ({ user, notifications = [], role, onMarkAsRead, onMarkAllRead, i
             </div>
 
             {/* Footer */}
-            <div style={{padding:'16px 24px', borderTop:'1px solid #F1F5F9', background:'#FAFAFA'}}>
-              <p style={{fontSize:'11px', color:'#94a3b8', textAlign:'center', margin:0}}>
-                Notifications are stored for 30 days
-              </p>
+            <div style={{padding:'16px 24px', borderTop:'1px solid #F1F5F9', background:'#FAFAFA', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              <p style={{fontSize:'11px', color:'#94a3b8', margin:0}}>Stored for 30 days</p>
+              {notifications.length > 0 && (
+                <button
+                  onClick={() => { onClearNotifs && onClearNotifs(); setShowAllNotif(false); }}
+                  style={{
+                    fontSize:'12px', color:'#ef4444', fontWeight:600,
+                    background:'none', border:'1px solid #fecaca',
+                    borderRadius:'8px', padding:'6px 14px', cursor:'pointer'
+                  }}
+                >
+                  🗑 Clear All
+                </button>
+              )}
             </div>
           </div>
         </>

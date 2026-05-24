@@ -38,6 +38,8 @@ import { dirname } from 'path';
 import path from 'path';
 import fs from 'fs';
 import cron from 'node-cron';
+import { releaseMilestone1, releaseMilestone2 } from './services/escrowService.js';
+import * as notificationController from './controllers/notificationController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -384,6 +386,100 @@ async function startServer() {
           }
         } catch (err) {
           console.error('[Escalation Cron] Error:', err.message);
+        }
+      });
+
+      // ── ESCROW: Auto-release Milestone 1 after 24 h (every 30 min) ─────────
+      cron.schedule('*/30 * * * *', async () => {
+        try {
+          const result = await db.query(`
+            SELECT * FROM service_requests
+            WHERE status = 'work_started'
+              AND arrival_confirmed_by_consumer = false
+              AND disputed = false
+              AND milestone1_released = false
+              AND work_started_at < NOW() - INTERVAL '24 hours'
+          `);
+
+          for (const job of result.rows) {
+            try {
+              await releaseMilestone1(job.id, 'auto_released', db);
+
+              const io = global.io;
+              if (io && job.producer_id) {
+                io.to(`user_${job.producer_id}`).emit('milestone1_auto_released', {
+                  jobId: job.id,
+                  message: 'Milestone 1 auto-released after 24 hours of no consumer confirmation.'
+                });
+              }
+
+              await notificationController.createNotification(
+                job.producer_id,
+                '💰 Milestone 1 Auto-Released',
+                'Milestone 1 was automatically released after 24 hours of no consumer confirmation.',
+                'payment', null
+              );
+              await notificationController.createNotification(
+                job.consumer_id,
+                'ℹ️ Milestone 1 Auto-Released',
+                'The expert\'s arrival milestone was auto-released after 24 hours without your confirmation.',
+                'system', null
+              );
+
+              console.log(`[CRON] Auto-released Milestone 1 for job ${job.id}`);
+            } catch (jobErr) {
+              console.error(`[CRON] Failed auto-release M1 for job ${job.id}:`, jobErr.message);
+            }
+          }
+        } catch (err) {
+          console.error('[CRON] Milestone 1 auto-release error:', err.message);
+        }
+      });
+
+      // ── ESCROW: Auto-release Milestone 2 after 72 h (every hour) ──────────
+      cron.schedule('0 * * * *', async () => {
+        try {
+          const result = await db.query(`
+            SELECT * FROM service_requests
+            WHERE status = 'work_done'
+              AND completion_confirmed_by_consumer = false
+              AND disputed = false
+              AND milestone2_released = false
+              AND work_done_at < NOW() - INTERVAL '72 hours'
+          `);
+
+          for (const job of result.rows) {
+            try {
+              await releaseMilestone2(job.id, 'auto_released', db);
+
+              const io = global.io;
+              if (io && job.producer_id) {
+                io.to(`user_${job.producer_id}`).emit('milestone2_auto_released', {
+                  jobId: job.id,
+                  message: 'Milestone 2 auto-released after 72 hours of no consumer confirmation.'
+                });
+              }
+
+              await notificationController.createNotification(
+                job.producer_id,
+                '🎉 Final Payment Auto-Released',
+                'Milestone 2 was automatically released after 72 hours of no consumer confirmation. Job closed.',
+                'payment', null
+              );
+              await notificationController.createNotification(
+                job.consumer_id,
+                'ℹ️ Final Payment Auto-Released',
+                'The completion milestone was auto-released after 72 hours without your confirmation.',
+                'system', null
+              );
+
+              console.log(`[CRON] Auto-released Milestone 2 for job ${job.id}`);
+            } catch (jobErr) {
+              console.error(`[CRON] Failed auto-release M2 for job ${job.id}:`, jobErr.message);
+            }
+          }
+        } catch (err) {
+          console.error('[CRON] Milestone 2 auto-release error:', err.message);
         }
       });
 

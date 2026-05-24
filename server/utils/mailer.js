@@ -15,10 +15,10 @@ const getTransporter = () => nodemailer.createTransport({
 export const sendExpertWelcomeEmail = async ({ name, email, password }) => {
     const appUrl = process.env.CLIENT_URL?.split(',')[0]?.trim() || 'http://localhost:5173';
     await getTransporter().sendMail({
-        from: `"origiNode Support" <${process.env.SMTP_USER}>`,
+        from: `"IndEase Support" <${process.env.SMTP_USER}>`,
         to: email,
-        subject: 'Welcome to origiNode — Your Expert Account is Ready',
-        text: `Hello ${name},\n\nYour service expert account has been created on origiNode.\n\nLogin Credentials:\nEmail: ${email}\nPassword: ${password}\n\nLogin here: ${appUrl}/provider/login\n\nIMPORTANT — Before you can receive payments:\n1. Login to your account\n2. You will be prompted to add your bank details\n3. All earnings will be transferred to your bank account\n\nIf you need help, contact us at ${SUPPORT_EMAIL}\n\n– Team origiNode`,
+        subject: 'Welcome to IndEase — Your Expert Account is Ready',
+        text: `Hello ${name},\n\nYour service expert account has been created on IndEase.\n\nLogin Credentials:\nEmail: ${email}\nPassword: ${password}\n\nLogin here: ${appUrl}/provider/login\n\nIMPORTANT — Before you can receive payments:\n1. Login to your account\n2. You will be prompted to add your bank details\n3. All earnings will be transferred to your bank account\n\nIf you need help, contact us at ${SUPPORT_EMAIL}\n\n– Team IndEase`,
         html: `
 <!DOCTYPE html>
 <html>
@@ -31,7 +31,7 @@ export const sendExpertWelcomeEmail = async ({ name, email, password }) => {
       <!-- HEADER -->
       <tr>
         <td style="background:linear-gradient(135deg,#1e40af 0%,#2563EB 100%);padding:40px;text-align:center;">
-          <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">origiNode</h1>
+          <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">IndEase</h1>
           <p style="margin:8px 0 0;color:#93c5fd;font-size:13px;letter-spacing:1px;text-transform:uppercase;">Industrial Service Platform</p>
         </td>
       </tr>
@@ -43,7 +43,7 @@ export const sendExpertWelcomeEmail = async ({ name, email, password }) => {
             <span style="color:#1d4ed8;font-size:13px;font-weight:600;">✓ Account Created Successfully</span>
           </div>
           <h2 style="margin:20px 0 8px;color:#111827;font-size:24px;font-weight:700;">Welcome, ${name}!</h2>
-          <p style="margin:0;color:#6B7280;font-size:15px;line-height:1.6;">Your service expert account on origiNode is ready. You can now accept service requests from machine owners across India.</p>
+          <p style="margin:0;color:#6B7280;font-size:15px;line-height:1.6;">Your service expert account on IndEase is ready. You can now accept service requests from machine owners across India.</p>
         </td>
       </tr>
 
@@ -89,7 +89,7 @@ export const sendExpertWelcomeEmail = async ({ name, email, password }) => {
       <!-- HOW IT WORKS -->
       <tr>
         <td style="padding:0 40px 32px;">
-          <p style="margin:0 0 16px;color:#374151;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">How origiNode Works</p>
+          <p style="margin:0 0 16px;color:#374151;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">How IndEase Works</p>
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
               <td width="33%" style="text-align:center;padding:16px 8px;background:#F8FAFF;border-radius:10px;margin:4px;">
@@ -119,7 +119,7 @@ export const sendExpertWelcomeEmail = async ({ name, email, password }) => {
         <td style="padding:0 40px 32px;">
           <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:20px;">
             <p style="margin:0 0 8px;color:#14532D;font-size:14px;font-weight:700;">💼 Your Earnings Structure</p>
-            <p style="margin:0 0 12px;color:#166534;font-size:13px;line-height:1.6;">At origiNode, you earn in two ways:</p>
+            <p style="margin:0 0 12px;color:#166534;font-size:13px;line-height:1.6;">At IndEase, you earn in two ways:</p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="padding:6px 0;border-bottom:1px solid #D1FAE5;">
@@ -150,8 +150,8 @@ export const sendExpertWelcomeEmail = async ({ name, email, password }) => {
       <!-- FOOTER -->
       <tr>
         <td style="background:#F9FAFB;border-top:1px solid #E5E7EB;padding:24px 40px;text-align:center;">
-          <p style="margin:0;color:#6B7280;font-size:12px;">Need help? Contact us at <a href="mailto:originode7@gmail.com" style="color:#2563EB;">originode7@gmail.com</a></p>
-          <p style="margin:8px 0 0;color:#9CA3AF;font-size:11px;">© 2026 origiNode Systems. All rights reserved.</p>
+          <p style="margin:0;color:#6B7280;font-size:12px;">Need help? Contact us at <a href="mailto:support@indease.com" style="color:#2563EB;">support@indease.com</a></p>
+          <p style="margin:8px 0 0;color:#9CA3AF;font-size:11px;">© 2026 IndEase Systems. All rights reserved.</p>
         </td>
       </tr>
 
@@ -165,10 +165,10 @@ export const sendExpertWelcomeEmail = async ({ name, email, password }) => {
 
 export const sendExpertRemovalEmail = async ({ name, email, reason }) => {
     await getTransporter().sendMail({
-        from: `"origiNode Support" <${process.env.SMTP_USER}>`,
+        from: `"IndEase Support" <${process.env.SMTP_USER}>`,
         to: email,
-        subject: 'Your origiNode Expert Account Has Been Removed',
-        text: `Hello ${name},\n\nYour account has been removed from the origiNode platform.\nReason: ${reason}\n\nIf you believe this is a mistake, contact ${SUPPORT_EMAIL}\n\n– Team origiNode`,
+        subject: 'Your IndEase Expert Account Has Been Removed',
+        text: `Hello ${name},\n\nYour account has been removed from the IndEase platform.\nReason: ${reason}\n\nIf you believe this is a mistake, contact ${SUPPORT_EMAIL}\n\n– Team IndEase`,
         html: `
 <!DOCTYPE html>
 <html>
@@ -181,7 +181,7 @@ export const sendExpertRemovalEmail = async ({ name, email, reason }) => {
       <!-- HEADER -->
       <tr>
         <td style="background:#111827;padding:40px;text-align:center;">
-          <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;">origiNode</h1>
+          <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;">IndEase</h1>
           <p style="margin:8px 0 0;color:#9CA3AF;font-size:13px;letter-spacing:1px;text-transform:uppercase;">Industrial Service Platform</p>
         </td>
       </tr>
@@ -198,7 +198,7 @@ export const sendExpertRemovalEmail = async ({ name, email, reason }) => {
       <!-- REASON BOX -->
       <tr>
         <td style="padding:0 40px 32px;">
-          <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Your service expert account has been removed from the origiNode platform.</p>
+          <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Your service expert account has been removed from the IndEase platform.</p>
           <div style="background:#FEF2F2;border-left:4px solid #EF4444;border-radius:0 8px 8px 0;padding:16px 20px;">
             <p style="margin:0 0 6px;color:#991B1B;font-size:13px;font-weight:700;">Reason for Removal:</p>
             <p style="margin:0;color:#B91C1C;font-size:14px;">${reason}</p>
@@ -224,15 +224,15 @@ export const sendExpertRemovalEmail = async ({ name, email, reason }) => {
       <tr>
         <td style="padding:0 40px 40px;text-align:center;">
           <p style="margin:0 0 16px;color:#374151;font-size:14px;">If you believe this is a mistake or have questions:</p>
-          <a href="mailto:originode7@gmail.com" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;">Contact Support</a>
-          <p style="margin:16px 0 0;color:#6B7280;font-size:13px;">Email: <a href="mailto:originode7@gmail.com" style="color:#2563EB;">originode7@gmail.com</a></p>
+          <a href="mailto:support@indease.com" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;">Contact Support</a>
+          <p style="margin:16px 0 0;color:#6B7280;font-size:13px;">Email: <a href="mailto:support@indease.com" style="color:#2563EB;">support@indease.com</a></p>
         </td>
       </tr>
 
       <!-- FOOTER -->
       <tr>
         <td style="background:#F9FAFB;border-top:1px solid #E5E7EB;padding:24px 40px;text-align:center;">
-          <p style="margin:0;color:#9CA3AF;font-size:11px;">© 2026 origiNode Systems. All rights reserved.</p>
+          <p style="margin:8px 0 0;color:#9CA3AF;font-size:11px;">© 2026 IndEase Systems. All rights reserved.</p>
         </td>
       </tr>
 
@@ -246,7 +246,7 @@ export const sendExpertRemovalEmail = async ({ name, email, reason }) => {
 
 export const sendSupportEmail = async ({ name, email, subject, message }) => {
     await getTransporter().sendMail({
-        from: `"origiNode Support" <${process.env.SMTP_USER}>`,
+        from: `"IndEase Support" <${process.env.SMTP_USER}>`,
         to: SUPPORT_EMAIL,
         replyTo: email,
         subject: `Support Request - ${subject}`,
@@ -280,7 +280,7 @@ export const sendSupportEmail = async ({ name, email, subject, message }) => {
         </tr>
         <tr>
           <td style="padding:16px 40px;border-top:1px solid #e2e8f0;text-align:center;">
-            <p style="margin:0;color:#94a3b8;font-size:12px;">origiNode Support System &copy; 2026</p>
+            <p style="margin:0;color:#94a3b8;font-size:12px;">IndEase Support System &copy; 2026</p>
           </td>
         </tr>
       </table>
@@ -295,7 +295,7 @@ export async function sendBankDetailsRequestEmail(name, email) {
     const appUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const transporter = getTransporter();
     await transporter.sendMail({
-        from: `"origiNode Support" <${process.env.SMTP_USER}>`,
+        from: `"IndEase Support" <${process.env.SMTP_USER}>`,
         to: email,
         subject: 'Action Required — Add Your Bank Details to Receive Payments',
         html: `<!DOCTYPE html>
@@ -307,7 +307,7 @@ export async function sendBankDetailsRequestEmail(name, email) {
     <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
       <tr>
         <td style="background:linear-gradient(135deg,#1e40af 0%,#2563EB 100%);padding:40px;text-align:center;">
-          <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;">origiNode</h1>
+          <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;">IndEase</h1>
           <p style="margin:8px 0 0;color:#93c5fd;font-size:13px;letter-spacing:1px;text-transform:uppercase;">Industrial Service Platform</p>
         </td>
       </tr>
@@ -335,7 +335,7 @@ export async function sendBankDetailsRequestEmail(name, email) {
             <table cellpadding="0" cellspacing="0" width="100%">
               <tr><td style="padding:8px 0;border-bottom:1px solid #E5E7EB;">
                 <span style="color:#2563EB;font-weight:700;font-size:13px;">Step 1</span>
-                <span style="color:#374151;font-size:13px;margin-left:8px;">Login to your origiNode expert account</span>
+                <span style="color:#374151;font-size:13px;margin-left:8px;">Login to your IndEase expert account</span>
               </td></tr>
               <tr><td style="padding:8px 0;border-bottom:1px solid #E5E7EB;">
                 <span style="color:#2563EB;font-weight:700;font-size:13px;">Step 2</span>
@@ -373,8 +373,8 @@ export async function sendBankDetailsRequestEmail(name, email) {
       </tr>
       <tr>
         <td style="background:#F9FAFB;border-top:1px solid #E5E7EB;padding:24px 40px;text-align:center;">
-          <p style="margin:0;color:#6B7280;font-size:12px;">Questions? Contact us at <a href="mailto:originode7@gmail.com" style="color:#2563EB;">originode7@gmail.com</a></p>
-          <p style="margin:8px 0 0;color:#9CA3AF;font-size:11px;">© 2026 origiNode Systems. All rights reserved.</p>
+          <p style="margin:0;color:#6B7280;font-size:12px;">Questions? Contact us at <a href="mailto:support@indease.com" style="color:#2563EB;">support@indease.com</a></p>
+          <p style="margin:8px 0 0;color:#9CA3AF;font-size:11px;">© 2026 IndEase Systems. All rights reserved.</p>
         </td>
       </tr>
     </table>

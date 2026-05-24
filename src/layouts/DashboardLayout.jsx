@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 
-const DashboardLayout = ({ children, user, notifications, activeTab, setActiveTab, onLogout, onClearData, role, onMarkAsRead, onMarkAllRead, socketReconnecting, onSearch, searchResults, onSearchResultClick, isDemo, activeJobsCount = 0, activeRequestsCount = 0, newRequestsCount = 0 }) => {
+const DashboardLayout = ({ children, user, notifications, activeTab, setActiveTab, onLogout, onClearData, onClearNotifs, role, onMarkAsRead, onMarkAllRead, socketReconnecting, onSearch, searchResults, onSearchResultClick, isDemo, activeJobsCount = 0, activeRequestsCount = 0, newRequestsCount = 0 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
@@ -31,6 +31,7 @@ const DashboardLayout = ({ children, user, notifications, activeTab, setActiveTa
           role={role}
           onMarkAsRead={onMarkAsRead}
           onMarkAllRead={onMarkAllRead}
+          onClearNotifs={onClearNotifs}
           isDemo={isDemo}
           onMenuClick={() => setSidebarOpen(true)}
           setActiveTab={setActiveTab}
@@ -61,7 +62,7 @@ const DashboardLayout = ({ children, user, notifications, activeTab, setActiveTa
             <div className="pt-6 border-t border-slate-200/60 text-center">
               <p className="text-xs text-slate-400 font-medium">
                 Need help? Contact us at{' '}
-                <a href="mailto:originode7@gmail.com" className="text-teal-500 hover:underline font-bold">
+                <a href="mailto:support@indease.com" className="text-teal-500 hover:underline font-bold">
                   IndEase Support
                 </a>
               </p>

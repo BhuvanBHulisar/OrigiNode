@@ -22,7 +22,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 
-const SUPPORT_EMAIL = 'originode7@gmail.com';
+const SUPPORT_EMAIL = 'support@indease.com';
 
 const SUBJECTS = [
   'Payment Issue',

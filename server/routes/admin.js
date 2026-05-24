@@ -579,6 +579,7 @@ router.get("/jobs/:id/admin-detail", async (req, res) => {
       `SELECT
           sr.id, sr.status, sr.issue_description, sr.priority,
           sr.created_at, sr.accepted_at, sr.completed_at, sr.quoted_cost,
+          sr.disputed, sr.dispute_reason, sr.dispute_raised_by, sr.dispute_raised_at,
           COALESCE(c.first_name || ' ' || c.last_name, c.email) AS consumer_name,
           c.email AS consumer_email,
           COALESCE(p.first_name || ' ' || p.last_name, p.email) AS expert_name,
@@ -974,6 +975,108 @@ router.delete('/db/:table/:id', adminOnly, async (req, res) => {
     await db.query(`DELETE FROM ${table} WHERE id=$1`, [id]);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: 'Failed to delete' }); }
+});
+
+// ────────────── Dispute Resolution ──────────────
+// @route   PATCH /admin/jobs/:id/resolve-dispute
+// @desc    Admin resolves a dispute — releases funds to expert or refunds consumer.
+router.patch('/jobs/:id/resolve-dispute', async (req, res) => {
+  const { id: jobId } = req.params;
+  const { releaseTo } = req.body;
+  const io = req.app.get('socketio') || global.io;
+
+  if (!['consumer', 'expert'].includes(releaseTo)) {
+    return res.status(400).json({ error: "releaseTo must be 'consumer' or 'expert'" });
+  }
+
+  try {
+    // Validate job exists and is disputed
+    const jobRes = await db.query(
+      `SELECT sr.*, 
+              c.first_name AS consumer_first_name,
+              p.first_name AS expert_first_name
+       FROM service_requests sr
+       LEFT JOIN users c ON c.id = sr.consumer_id
+       LEFT JOIN users p ON p.id = sr.producer_id
+       WHERE sr.id = $1`,
+      [jobId]
+    );
+
+    if (!jobRes.rows.length) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const job = jobRes.rows[0];
+
+    if (!job.disputed) {
+      return res.status(400).json({ error: 'This job does not have an active dispute' });
+    }
+
+    // Call escrow service to resolve
+    const { resolveDispute } = await import('../services/escrowService.js');
+    const updatedJob = await resolveDispute(jobId, releaseTo, db);
+
+    if (releaseTo === 'expert') {
+      // Notify expert
+      if (io && job.producer_id) {
+        io.to(`user_${job.producer_id}`).emit('dispute_resolved', {
+          jobId, releaseTo,
+          message: 'Dispute resolved in your favour. Payment released.'
+        });
+      }
+      if (io && job.consumer_id) {
+        io.to(`user_${job.consumer_id}`).emit('dispute_resolved', {
+          jobId, releaseTo,
+          message: 'Dispute resolved. Expert was paid.'
+        });
+      }
+
+      await notificationController.createNotification(
+        job.producer_id,
+        '✅ Dispute Resolved — Payment Released',
+        'Admin reviewed the dispute and resolved it in your favour. Payment has been released.',
+        'payment', null
+      );
+      await notificationController.createNotification(
+        job.consumer_id,
+        'ℹ️ Dispute Resolved',
+        'Admin reviewed the dispute and the payment was released to the expert.',
+        'system', null
+      );
+    } else {
+      // releaseTo === 'consumer'
+      if (io && job.consumer_id) {
+        io.to(`user_${job.consumer_id}`).emit('dispute_resolved', {
+          jobId, releaseTo,
+          message: 'Dispute resolved in your favour. Refund initiated.'
+        });
+      }
+      if (io && job.producer_id) {
+        io.to(`user_${job.producer_id}`).emit('dispute_resolved', {
+          jobId, releaseTo,
+          message: 'Dispute resolved. Payment was refunded to consumer.'
+        });
+      }
+
+      await notificationController.createNotification(
+        job.consumer_id,
+        '✅ Dispute Resolved — Refund Initiated',
+        'Admin reviewed the dispute and resolved it in your favour. A refund has been initiated.',
+        'payment', null
+      );
+      await notificationController.createNotification(
+        job.producer_id,
+        'ℹ️ Dispute Resolved',
+        'Admin reviewed the dispute and the payment was refunded to the consumer.',
+        'system', null
+      );
+    }
+
+    return res.json({ success: true, job: updatedJob });
+  } catch (err) {
+    console.error('[Admin] resolve-dispute failed:', err);
+    res.status(500).json({ error: 'Failed to resolve dispute' });
+  }
 });
 
 export default router;
